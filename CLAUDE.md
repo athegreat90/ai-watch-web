@@ -117,7 +117,8 @@ Instructions for coding agents working on AI Watch Web. Read `MEMORY.md` first f
 
 - Conventional Commits, for example `feat(core): add status poller`.
 - Do not add `Co-Authored-By` lines or any AI attribution to commits or pull request descriptions.
-- Do not push, open pull requests or merge unless the owner asks.
+- **Never push directly to `main`.** Always work on a branch (`fix/...`, `feat/...`, `docs/...`), push that branch and open a pull request to `main`. Do this even for a one-line fix.
+- Do not push, open pull requests or merge unless the owner asks. Never merge a pull request yourself.
 - Keep commits reviewable (about 400 changed lines), with tests and docs alongside the behaviour.
 
 ## Working with this repo
