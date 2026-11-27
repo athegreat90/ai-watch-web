@@ -1,0 +1,37 @@
+# Build the image here and run it next to an AI Watch server:
+#   mkdir -p secrets && printf '%s' "<the server's monitor token>" > secrets/monitor_key
+#   UPSTREAM_URL=http://host.docker.internal:8765 docker compose up --build
+# The released deployment bundle (phase 12) uses a published image instead of `build`.
+name: ai-watch-web
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: ${AI_WATCH_WEB_IMAGE:-ai-watch-web:local}
+    environment:
+      UPSTREAM_URL: ${UPSTREAM_URL:-http://ai-watch-server:8765}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-}
+    secrets:
+      - monitor_key
+    # Loopback by default: the dashboard has no login unless a password file is added.
+    ports:
+      - '${WEB_HOST_BIND:-127.0.0.1}:${WEB_HOST_PORT:-8080}:8080'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 64m
+    cpus: 0.5
+    init: true
+    restart: unless-stopped
+
+secrets:
+  monitor_key:
+    file: ./secrets/monitor_key
