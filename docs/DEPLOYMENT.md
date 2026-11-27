@@ -30,7 +30,8 @@ In the unzipped bundle:
 ```sh
 cp env.example .env
 mkdir -p secrets && chmod 700 secrets
-IFS= read -rs -p 'Server token: ' t && printf '%s' "$t" > secrets/monitor_key && unset t && chmod 644 secrets/monitor_key
+printf 'Server token: '; stty -echo; IFS= read -r t; stty echo; printf '\n'
+printf '%s' "$t" > secrets/monitor_key; unset t; chmod 644 secrets/monitor_key
 # edit .env: UPSTREAM_URL=http://192.168.1.50:8765
 docker compose pull
 docker compose up -d --wait
