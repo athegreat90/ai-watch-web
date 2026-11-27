@@ -2,7 +2,7 @@
 
 How CI and releases work, and the one-time GitHub setup they need.
 
-> **Status on 2026-11-27:** the workflows are written and checked locally (actionlint, policy tests, and the publication script against a local registry). **Nothing has run on GitHub**, because the repository does not exist yet. Expect small fixes on the first real run.
+> **Status on 2026-11-27:** the repository exists and the workflows have run. `v0.1.0` was published automatically (tag, GitHub release with the bundle, both SBOMs and `SHA256SUMS`, and the multi-architecture image, with `:latest` at the same digest). Setup steps 1 to 4 and 6 below are done; step 5 (the security GitHub App) is not. The first push released nothing because its CI was red, and the merge of #1 released nothing because it changed no shipped file: a release needs a green `CI` on a push that changes a shipped path (`package.json` counts, a `.md` file does not).
 
 ## What runs
 
@@ -32,8 +32,8 @@ How CI and releases work, and the one-time GitHub setup they need.
 
 ## One-time GitHub setup
 
-1. **Create the repository** `athegreat90/ai-watch-web` (public is assumed: free arm64 and CodeQL). Push `main`.
-2. **Protect `main`.** Require pull requests and these status checks: `node`, `e2e`, `static`, `images (amd64)`, `images (arm64)`, `release-script` and `deploy`. Do not require `release-eligibility` (it only runs on a push to `main`) or `sonar` (it never runs for pull requests). `sonar` blocks the release instead, because the release only starts from a green `CI` run.
+1. **Create the repository** `athegreat90/ai-watch-web` (public is assumed: free arm64 and CodeQL). Push `main`. *Done.*
+2. **Protect `main`.** *Done on 2026-11-27*, as classic branch protection: a pull request is required (0 approvals, because a single owner cannot approve their own pull request; raise it when there are collaborators), the branch must be up to date, conversations must be resolved, force pushes and deletion are off, and it applies to administrators too (turn that off in Settings, Branches, only for an emergency, and back on afterwards). Required status checks: `node`, `e2e`, `static`, `images (amd64)`, `images (arm64)`, `release-script`, `deploy` and `analyze` (CodeQL). Do not require `release-eligibility` (it only runs on a push to `main`) or `sonar` (it never runs for pull requests). `sonar` blocks the release instead, because the release only starts from a green `CI` run.
 3. **Workflow permissions.** Leave the repository default at read-only (Settings, Actions, General). Each workflow asks for the permissions it needs, and only the release workflows ask to write.
 4. **Make the GHCR package public** after the first image is pushed: the package page, Package settings, Change visibility. Users pull it without a login.
 5. **The security GitHub App** (the one `ai-watch-server` uses): install it on this repository, then set the variable `SECURITY_APP_CLIENT_ID` and the secret `SECURITY_APP_PRIVATE_KEY`. It needs Contents, Issues and Pull requests: Read and write. A 403 means the App is not installed here or lacks one of them.

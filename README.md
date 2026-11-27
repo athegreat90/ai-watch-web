@@ -2,7 +2,7 @@
 
 A web dashboard that shows what your AI coding agents are doing: which sessions are working, which need you, how long they have waited, and how much of your usage limits is left. It reproduces the AI Watch firmware screens in a browser and reads the existing [AI Watch server](https://github.com/athegreat90/ai-watch-server). It ships as one small Nginx container for `linux/amd64` and `linux/arm64`.
 
-> **Status: all 13 phases are done, and nothing has been released.** The parity specification (`docs/FUNCTIONAL-PARITY.md`, `docs/API.md`) and the Angular scaffold exist: routing, lazy feature pages, the AMOLED theme and the build and test tooling. The API client, the shared poller, the connection state and the runtime config exist too, and the header shows the connection state. The dashboard, the Sessions pages (list and detail), the Limits page, the NEEDS YOU alert, the task-done celebration, the focus timer, meeting mode, the idle robot and the kiosk work against a real server. Settings works too: theme (AMOLED, dark, light, system), update interval, a connection test, an optional tone and desktop notifications, and demo mode. Every page passes an automated accessibility check (axe) in all three themes. The Nginx image builds and passes its tests for amd64 and arm64, and end-to-end tests drive it in a real browser against the real AI Watch server release. The security scripts, the Trivy policy and the SonarQube configuration exist (see `docs/SECURITY.md`), and the image scan passes with **6 Nginx findings accepted until 2026-12-27** because the fixed Nginx is not published yet. The GitHub Actions workflows (CI, automatic release, manual publish, daily remediation, CodeQL) are written and checked locally, but **no GitHub repository exists yet, so nothing has run on GitHub**. See `docs/RELEASING.md`. Everything below describes the intended behaviour. Items marked **new** are not in the firmware.
+> **Status: all 13 phases are done, and `v0.1.0` is released.** The parity specification (`docs/FUNCTIONAL-PARITY.md`, `docs/API.md`) and the Angular scaffold exist: routing, lazy feature pages, the AMOLED theme and the build and test tooling. The API client, the shared poller, the connection state and the runtime config exist too, and the header shows the connection state. The dashboard, the Sessions pages (list and detail), the Limits page, the NEEDS YOU alert, the task-done celebration, the focus timer, meeting mode, the idle robot and the kiosk work against a real server. Settings works too: theme (AMOLED, dark, light, system), update interval, a connection test, an optional tone and desktop notifications, and demo mode. Every page passes an automated accessibility check (axe) in all three themes. The Nginx image builds and passes its tests for amd64 and arm64, and end-to-end tests drive it in a real browser against the real AI Watch server release. The security scripts, the Trivy policy and the SonarQube configuration exist (see `docs/SECURITY.md`), and the image scan passes with **6 Nginx findings accepted until 2026-12-27** because the fixed Nginx is not published yet. The GitHub Actions workflows (CI, automatic release, manual publish, daily remediation, CodeQL) run on `athegreat90/ai-watch-web`. `v0.1.0` was published on 2026-11-27 (a multi-architecture image on GHCR, the deployment bundle and the SBOMs), and `main` is protected: a pull request and green checks are required. See `docs/RELEASING.md`. Everything below describes the intended behaviour. Items marked **new** are not in the firmware.
 
 ## Develop
 
@@ -168,9 +168,61 @@ docker build -f docker/Dockerfile -t ai-watch-web:test .
 AIW_TEST_IMAGE=ai-watch-web:test npm run test:proxy       # 104 checks against real containers
 ```
 
+## Docker Compose standalone
+
+One file, with no Dockerfile, no Git clone and no Node. You need Docker with Compose v2 and an AI Watch server that is already running somewhere you can reach. The page runs from the published image `ghcr.io/athegreat90/ai-watch-web` (`linux/amd64` and `linux/arm64`). The file is [`compose.standalone.yaml`](compose.standalone.yaml), and it was tested alone in an empty folder with Compose 5.7.1.
+
+**1. Get the file** into an empty folder, saved as `compose.yaml`:
+
+```sh
+mkdir ai-watch-web && cd ai-watch-web
+curl -fsSLo compose.yaml https://raw.githubusercontent.com/athegreat90/ai-watch-web/main/compose.standalone.yaml
+```
+
+```powershell
+mkdir ai-watch-web; cd ai-watch-web
+Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/athegreat90/ai-watch-web/main/compose.standalone.yaml -OutFile compose.yaml
+```
+
+**2. Save the server's monitor token** (the `token` in the AI Watch server's `config.local.json`) as a Docker secret file. It is never an environment variable:
+
+```sh
+mkdir -p secrets && chmod 700 secrets
+IFS= read -rs -p 'Server token: ' t && printf '%s' "$t" > secrets/monitor_key && unset t
+chmod 644 secrets/monitor_key      # the container runs as user 101 and must be able to read it
+```
+
+```powershell
+mkdir secrets | Out-Null
+$t = Read-Host 'Server token'
+[IO.File]::WriteAllText("$PWD\secrets\monitor_key", $t)    # exact bytes: no BOM, no trailing newline
+```
+
+**3. Say where the server is, and start it.** Use the server's LAN address, not `127.0.0.1` (a container cannot reach its host's loopback) and not a name that only `/etc/hosts` knows (Nginx ignores that file). `UPSTREAM_URL` is required: without it Compose stops and says so.
+
+```sh
+echo 'UPSTREAM_URL=http://192.168.1.50:8765' > .env
+docker compose up -d --wait
+```
+
+**4. Open** `http://127.0.0.1:8080`. If it says the server is unreachable or the token was refused, see `docs/TROUBLESHOOTING.md`.
+
+Day to day, in the same folder:
+
+```sh
+docker compose logs web                 # what the container says (the token is never in it)
+docker compose pull && docker compose up -d    # move to a newer :latest (recreated only if it changed)
+docker compose down                     # stop and remove it; secrets/ and .env stay
+```
+
+- **Pin a version** by adding `AI_WATCH_WEB_IMAGE=ghcr.io/athegreat90/ai-watch-web:v0.1.0` to `.env`. A version tag never changes; `:latest` follows the newest stable release.
+- **Other settings** go in the same `.env`: `WEB_HOST_PORT` (default `8080`), `WEB_HOST_BIND` (default `127.0.0.1`, this machine only) and `POLL_INTERVAL_MS`. The page has no login, so read "Remote access" in `docs/DEPLOYMENT.md` before binding a LAN address.
+- **The link follows `main`.** The file does not change by itself once you have saved it.
+- **What it does not do** compared with the deployment bundle below: it does not run the AI Watch server for you, add a login, record the previous image for a rollback, or check at the end that the server accepts the token. For those, use the bundle.
+
 ## Deployment
 
-Deploy without cloning the repository, installing Node or building an image. Each release attaches `ai-watch-web-deploy-vX.Y.Z.zip` (the Compose files, `env.example`, `install.sh`, `install.ps1` and a README), the SBOM of each architecture and `SHA256SUMS`. Everything below is built and tested (`npm run test:deploy`, `npm run test:deploy:windows`); it has not run against a real release yet. The full guide is `deploy/ai-watch-web-deploy/README.md`.
+Deploy without cloning the repository, installing Node or building an image. Each release attaches `ai-watch-web-deploy-vX.Y.Z.zip` (the Compose files, `env.example`, `install.sh`, `install.ps1` and a README), the SBOM of each architecture and `SHA256SUMS`. Everything below is built and tested in CI and on Windows (`npm run test:deploy`, `npm run test:deploy:windows`) against a locally built image; nobody has yet run the installers from the downloaded `v0.1.0` zip. The full guide is `deploy/ai-watch-web-deploy/README.md`.
 
 ```sh
 ./install.sh --with-server                 # the page and the AI Watch server next to it, both private
@@ -182,7 +234,7 @@ Deploy without cloning the repository, installing Node or building an image. Eac
 ```
 
 ```powershell
-.install.ps1 -WithServer          # Windows Docker Desktop, PowerShell 5.1 or 7
+.\install.ps1 -WithServer         # Windows Docker Desktop, PowerShell 5.1 or 7
 ```
 
 - **The token is the one thing the installer cannot invent.** It comes from the AI Watch server: `--with-server` creates the server and its token together, `--token-file` takes an existing one. It is written only to `secrets/monitor_key` (a Docker secret). An existing secret or `.env` is never overwritten, and a different token is refused.

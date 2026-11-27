@@ -4,6 +4,8 @@ The version of a release is the highest `## [X.Y.Z]` heading below, or the next 
 
 ## [Unreleased]
 
+- `compose.standalone.yaml`: the page as one Compose file that needs only Docker and the published image (no Dockerfile, no clone), with its steps in the README.
+
 ## [0.1.0]
 
 First release. A dashboard for the AI Watch server that works in any browser and as a kiosk.

@@ -7,7 +7,8 @@ The routine jobs, and where the knowledge is. Read `MEMORY.md` first: it holds t
 | What | When | What to do |
 |---|---|---|
 | **Six accepted Nginx findings** (`security/accepted-risks.json`) | They expire on **2026-12-27**. | When Nginx 1.30.7 is published, run `python security/refresh_base.py`, rebuild, and delete the entries. If it is still unpublished near the date, decide again: the gate blocks releases after it. |
-| **First release** | When the owner is ready. | Do the one-time GitHub setup in `RELEASING.md`. Until then nothing has run on GitHub. |
+| **The security GitHub App** | Not set up yet. | Step 5 of `RELEASING.md`: install the App and set `SECURITY_APP_CLIENT_ID` and `SECURITY_APP_PRIVATE_KEY`. Until then the daily `remediate.yml` cannot open its issue or pull request. |
+| **First release** | Done: `v0.1.0`, 2026-11-27. | `main` is protected, so every change is a branch and a pull request, and the owner merges. See `RELEASING.md` for how a merge becomes a release. |
 
 ## Routine
 
