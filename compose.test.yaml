@@ -1,0 +1,69 @@
+# The stack the end-to-end tests run against: the real AI Watch server release, pinned by digest, and
+# the image of this repository in front of it. `e2e/global-setup.ts` writes ./e2e/.run (a random
+# token and its config files) and starts this file; nothing here is a real secret.
+#   AI_WATCH_WEB_IMAGE=ai-watch-web:test npx playwright test
+#
+# The server is v1.1.4. The newer commits on its main branch only change CI, docs and security
+# scripts, so this is the contract the app was built against.
+name: ai-watch-web-e2e
+
+x-web: &web
+  image: ${AI_WATCH_WEB_IMAGE:-ai-watch-web:test}
+  read_only: true
+  tmpfs:
+    - /tmp:size=16m,mode=1777
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  depends_on:
+    server:
+      condition: service_healthy
+
+services:
+  server:
+    image: ghcr.io/athegreat90/ai-watch-server:v1.1.4@sha256:26c92877901a03e8333ea72f31ec1fd7f18fc69f5b3a3068eeac9b153e78c9bd
+    user: '1000:1000'
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      MONITOR_BIND: 0.0.0.0
+    volumes:
+      - type: bind
+        source: ./e2e/.run/server-config.json
+        target: /app/config.local.json
+        read_only: true
+    ports:
+      - '127.0.0.1:${E2E_SERVER_PORT:-18765}:8765'
+
+  web:
+    <<: *web
+    environment:
+      UPSTREAM_URL: http://server:8765
+    secrets:
+      - monitor_key
+    ports:
+      - '127.0.0.1:${E2E_WEB_PORT:-18080}:8080'
+
+  # The same image with a key the server does not accept, for the "token rejected" state.
+  web-badtoken:
+    <<: *web
+    environment:
+      UPSTREAM_URL: http://server:8765
+    secrets:
+      - bad_key
+    ports:
+      - '127.0.0.1:${E2E_BADTOKEN_PORT:-18081}:8080'
+    entrypoint:
+      - sh
+      - -c
+      - MONITOR_KEY_FILE=/run/secrets/bad_key exec /usr/local/bin/aiw-entrypoint
+
+secrets:
+  monitor_key:
+    file: ./e2e/.run/monitor_key
+  bad_key:
+    file: ./e2e/.run/bad_key
