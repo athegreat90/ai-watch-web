@@ -19,6 +19,24 @@ const docker = (...args) => spawnSync('docker', args, { encoding: 'utf8', timeou
 const dockerUp = image && docker('info', '--format', '{{.ServerVersion}}').status === 0;
 const skip = dockerUp ? false : 'set AIW_TEST_IMAGE and start Docker to test the image';
 
+// Nginx finds UPSTREAM_URL with its own resolver, which does not read /etc/hosts. A name added with
+// --add-host is therefore unknown to it on Linux (Docker Desktop answers for host.docker.internal
+// itself, which hid this). So the tests use the address that the host-gateway name stands for.
+const hostAddress = dockerUp
+  ? docker(
+      'run',
+      '--rm',
+      '--entrypoint',
+      'cat',
+      '--add-host',
+      'aiw-host:host-gateway',
+      image,
+      '/etc/hosts',
+    ).stdout.match(/^(\S+)\s+aiw-host/m)?.[1]
+  : undefined;
+// A run that cannot find the address would fail every test with a puzzling 502, so say it plainly.
+if (dockerUp && !hostAddress) throw new Error('could not find the Docker host-gateway address');
+
 /** Nginx counts the cache in whole seconds, so an entry lives 1 to 2 seconds. */
 const CACHE_RUNS_OUT_MS = 2300;
 const TOKEN = `tok-${crypto.randomBytes(16).toString('hex')}`;
@@ -72,8 +90,6 @@ function startWeb({ key = TOKEN, upstream, env = {}, htpasswd } = {}) {
     'ALL',
     '--security-opt',
     'no-new-privileges:true',
-    '--add-host',
-    'host.docker.internal:host-gateway',
     '-p',
     '127.0.0.1::8080',
     '-e',
@@ -114,7 +130,7 @@ const logs = (id) => {
   const r = docker('logs', id);
   return `${r.stdout}${r.stderr}`;
 };
-const upstreamUrl = (port) => `http://host.docker.internal:${port}`;
+const upstreamUrl = (port) => `http://${hostAddress}:${port}`;
 
 describe('the AI Watch Web image', { skip }, () => {
   let mock;
@@ -248,7 +264,7 @@ describe('the AI Watch Web image', { skip }, () => {
     it('asks the server with a plain GET and the server\x27s own host name', () => {
       const request = upstream('/api/status');
       assert.equal(request.method, 'GET');
-      assert.equal(request.headers.host, `host.docker.internal:${mock.port}`);
+      assert.equal(request.headers.host, `${hostAddress}:${mock.port}`);
     });
 
     it('tells the browser not to keep the data, and hides the server\x27s own headers', () => {

@@ -66,6 +66,8 @@ export function startMock({ token }) {
     else respond();
   });
 
+  // A mock a failing test forgot to close must not keep the whole run alive (CI once hung for 30 minutes).
+  server.unref();
   return new Promise((resolve) => {
     server.listen(0, '0.0.0.0', () =>
       resolve({
