@@ -1,0 +1,47 @@
+{
+  "_comment": "Time-boxed exceptions to the Trivy gate, approved by the owner on 2026-11-27. Each one covers one advisory of one package at one fixed version and stops applying on its date, or when security/check_nginx_features.py finds a feature the advisory needs. Remove an entry as soon as the fix is installed.",
+  "accepted": [
+    {
+      "id": "CVE-2026-113425",
+      "package": "nginx",
+      "fixed": "1.30.7-r0",
+      "expires": "2026-12-27",
+      "reason": "Needs the mail proxy. This site only serves HTTP and proxies three GET routes. Nginx 1.30.7 is not yet published in nginx-unprivileged or Alpine."
+    },
+    {
+      "id": "CVE-2026-121810",
+      "package": "nginx",
+      "fixed": "1.30.7-r0",
+      "expires": "2026-12-27",
+      "reason": "Needs HTTP/3 (QUIC). Not enabled. Nginx 1.30.7 is not yet published."
+    },
+    {
+      "id": "CVE-2026-123007",
+      "package": "nginx",
+      "fixed": "1.30.7-r0",
+      "expires": "2026-12-27",
+      "reason": "Needs HTTP/2. The only listener is plain HTTP/1.1 on port 8080. Nginx 1.30.7 is not yet published."
+    },
+    {
+      "id": "CVE-2026-123633",
+      "package": "nginx",
+      "fixed": "1.30.7-r0",
+      "expires": "2026-12-27",
+      "reason": "Needs HTTP/2 for client connections. Not enabled. Nginx 1.30.7 is not yet published."
+    },
+    {
+      "id": "CVE-2026-118899",
+      "package": "nginx",
+      "fixed": "1.30.7-r0",
+      "expires": "2026-12-27",
+      "reason": "Needs a listen directive with the ssl parameter. This container terminates no TLS. Nginx 1.30.7 is not yet published."
+    },
+    {
+      "id": "CVE-2026-123634",
+      "package": "nginx",
+      "fixed": "1.30.7-r0",
+      "expires": "2026-12-27",
+      "reason": "Needs an SSI or mirror subrequest to a location that resolves the same proxied name. Neither is enabled. Nginx 1.30.7 is not yet published."
+    }
+  ]
+}

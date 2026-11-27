@@ -1,0 +1,54 @@
+name: Publish image
+# Manual path for releases created in the GitHub UI or with a personal token. It runs the very same
+# publication script as the automatic release (immutable version tag, `latest` only for the newest
+# stable version, same index digest) and requires CI to have succeeded on main for the tagged
+# commit, so an unvalidated commit never gets a version tag or `latest`. Rerunning is safe.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v0.1.0
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: publish-release
+  queue: max
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+      packages: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate the tag and require a green CI run for its commit
+        id: tested
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]] || { echo "Unexpected tag $RELEASE_TAG"; exit 1; }
+          sha=$(git rev-parse HEAD)
+          bash release/require-ci.sh "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Publish the version tag and, when eligible, latest
+        env:
+          TESTED_SHA: ${{ steps.tested.outputs.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: bash release/push-image.sh
+      - name: Attach release assets that are missing
+        run: |
+          bash security/check-image.sh amd64
+          bash security/check-image.sh arm64
+          bash release/assets.sh
+          python3 release/automatic.py publish

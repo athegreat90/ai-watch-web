@@ -1,0 +1,219 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  # A newer push to a pull request replaces the older run. A run on main must never be replaced,
+  # because a release is decided from it. GitHub keeps only one pending run per group and cancels
+  # the older pending ones even without cancel-in-progress, so every non-PR run gets its own group.
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  node:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Formatting
+        run: npm run format:check
+      - run: npm run lint
+      - name: Types (app, specs and end-to-end tests)
+        run: npm run typecheck
+      - name: Unit tests with coverage
+        run: npm run test:ci
+      - name: Coverage summary
+        run: |
+          {
+            echo '### Unit test coverage'
+            echo '```'
+            awk -F: '/^LF:/ {f+=$2} /^LH:/ {h+=$2} /^BRF:/ {bf+=$2} /^BRH:/ {bh+=$2} END {printf "lines %.1f%% (%d/%d), branches %.1f%% (%d/%d)\n", 100*h/f, h, f, 100*bh/bf, bh, bf}' coverage/ai-watch-web/lcov.info
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+      - run: npm run build
+      - name: Entrypoint tests
+        run: npm run test:entrypoint
+      - name: Release and security tooling tests
+        run: |
+          python3 -m unittest discover -s release -p 'test_*.py' -v
+          python3 -m unittest discover -s security -p 'test_*.py' -v
+          bash security/test_upsert_issue.sh
+      - name: Node and Nginx pins agree
+        run: python3 security/check_version.py --installed
+
+  e2e:
+    # The image is built here and tested as it is: proxy rules against real containers, then the
+    # browser tests against the image and the real, pinned AI Watch server release. Includes the contract test.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      AI_WATCH_WEB_IMAGE: ai-watch-web:test
+      AIW_TEST_IMAGE: ai-watch-web:test
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: docker build -f docker/Dockerfile -t ai-watch-web:test .
+      - name: Proxy rules against real containers
+        run: npm run test:proxy
+      - run: npm run e2e:install
+      - name: Browser tests
+        run: npm run e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: e2e-report
+          path: |
+            e2e/.report/
+            e2e/.results/
+          retention-days: 7
+
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Dependencies, secrets and misconfiguration (npm audit and Trivy)
+        run: bash security/scan-repo.sh
+      - name: Workflow syntax and shell (actionlint)
+        # `queue` under concurrency is valid on GitHub (the sibling repositories run with it), but this
+        # actionlint release does not know it yet. Nothing else is ignored.
+        run: >-
+          docker run --rm -v "$PWD:/repo" -w /repo
+          rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+          -color -ignore 'unexpected key "queue" for "concurrency" section' .github/workflows/*.yml
+
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Build, smoke test, scan and SBOM
+        run: bash security/check-image.sh ${{ matrix.arch }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: image-scan-${{ matrix.arch }}
+          path: |
+            security-results/*.json
+          retention-days: 7
+
+  release-script:
+    # The publication script is the part of a release that cannot be tried on a real release: this runs it
+    # against a throwaway registry with real multi-platform builds (immutable tags, latest, prereleases).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - run: bash release/test_push_image.sh
+
+  deploy:
+    # The installer of the standalone bundle, run against real Docker: install, rerun, update, rollback, a
+    # server elsewhere, a wrong token, a tampered download. The PowerShell installer is tested on Windows
+    # (deploy/test_install.ps1): GitHub's Windows runners cannot run Linux containers.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker build -f docker/Dockerfile --build-arg VERSION=v0.0.1 -t ai-watch-web:v0.0.1 .
+      - run: bash deploy/test_install.sh
+
+  release-eligibility:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: changes
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: python3 release/automatic.py eligibility
+      - name: Mark qualifying changes
+        if: steps.changes.outputs.qualifies == 'true'
+        run: echo "Shipped files changed in this push."
+
+  sonar:
+    # SonarQube is reachable only inside the tailnet. The job joins it as an ephemeral, ACL-restricted
+    # tag:ci node using workload identity federation (no long-lived Tailscale secret). It never runs for
+    # pull requests (untrusted code must not obtain OIDC tokens or secrets), and the federated identity
+    # only trusts refs/heads/main of this repository. A failing Quality Gate fails this job, so CI fails
+    # and neither the version tag nor latest is published. Setup: docs/SONARQUBE.md.
+    if: github.event_name != 'pull_request'
+    needs: [node]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage
+          path: coverage
+      - name: Require the SonarQube settings
+        run: test -n "$SONAR_HOST_URL" && test -n "$SONAR_TOKEN" || { echo "Set the SONAR_HOST_URL variable and SONAR_TOKEN secret (docs/SONARQUBE.md)."; exit 1; }
+      - uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          args: --accept-dns=false
+      - name: Verify SonarQube is reachable over Tailscale
+        run: |
+          tailscale status
+          curl --fail --silent --show-error --max-time 20 "$SONAR_HOST_URL/api/system/status"
+      - uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
+        with:
+          args: -Dsonar.qualitygate.wait=true

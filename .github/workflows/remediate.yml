@@ -1,0 +1,65 @@
+name: Daily base image remediation
+# Scans both image architectures every day, keeps one issue with the findings, and opens a pull
+# request when a newer Node or Nginx base image passes the smoke test and the scan on both.
+on:
+  schedule:
+    - cron: '41 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: daily-base-image
+jobs:
+  candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        id: app
+        with:
+          client-id: ${{ vars.SECURITY_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+      - id: scan
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: bash security/remediate.sh
+      # The first setup-node read the old .nvmrc. A Node bump changed it, so the candidate is tested on the new one.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.scan.outputs.candidate == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Tests on the candidate
+        if: steps.scan.outputs.candidate == 'true'
+        run: |
+          npm ci --ignore-scripts
+          npm run test:ci
+          python3 security/check_version.py --installed
+      - name: Open or update the pull request
+        if: steps.scan.outputs.candidate == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          gh auth setup-git
+          branch=security/base-images
+          git config user.name 'AI Watch security bot'
+          git config user.email 'ai-watch-security@users.noreply.github.com'
+          git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch" || true
+          git switch -c "$branch"
+          git add docker/Dockerfile .nvmrc
+          git commit -m 'chore(deps): update container base images'
+          git push --force-with-lease origin "$branch"
+          { printf 'Both image architectures passed the smoke test and the vulnerability scan.\n\n'; git diff HEAD^ HEAD -- docker/Dockerfile .nvmrc; } > /tmp/ai-watch-pr.md
+          if gh pr view "$branch" --json state --jq .state | grep -q '^OPEN$'; then
+            gh pr edit "$branch" --body-file /tmp/ai-watch-pr.md
+          else
+            gh pr create --head "$branch" --base main --title 'chore(deps): update container base images' --body-file /tmp/ai-watch-pr.md
+          fi

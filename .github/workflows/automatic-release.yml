@@ -1,0 +1,65 @@
+name: Automatic release
+# Runs only after CI succeeded on a push to main. CI includes the unit and end-to-end tests, the
+# security scans, both image architectures and the SonarQube Quality Gate, so nothing below runs for
+# a commit that failed any required check.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  # One publication at a time, in order, shared with the manual path (publish-image.yml).
+  group: publish-release
+  queue: max
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+      packages: write
+    env:
+      TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 release/automatic.py reserve
+      - if: steps.version.outputs.tag != ''
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Scan both architectures again (also writes the SBOMs)
+        if: steps.version.outputs.tag != ''
+        run: |
+          bash security/check-image.sh amd64
+          bash security/check-image.sh arm64
+      - if: steps.version.outputs.tag != ''
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: bash release/assets.sh
+      - name: Publish the version tag and, when eligible, latest
+        if: steps.version.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: bash release/push-image.sh
+      - name: Create the GitHub release
+        if: steps.version.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          PREVIOUS_TAG: ${{ steps.version.outputs.previous }}
+        run: python3 release/automatic.py publish

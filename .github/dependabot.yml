@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Actions are pinned by full commit SHA, so they only move when this opens a pull request.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'chore(deps)'
+    # Angular, TypeScript and RxJS move together within Angular's peer ranges (CLAUDE.md), so a
+    # major version of them is a deliberate upgrade, not an automatic pull request.
+    ignore:
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
+      - dependency-name: 'rxjs'
+        update-types: ['version-update:semver-major']
+    groups:
+      development:
+        dependency-type: development
