@@ -1,0 +1,70 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Local deployment files: tokens, passwords and environment.
+/secrets/
+.env
+
+# End-to-end test output and the throwaway stack files.
+/e2e/.run/
+/e2e/.results/
+/e2e/.report/
+/test-results/
+/playwright-report/
+
+# Scan reports and SBOMs.
+/security-results/
+
+__pycache__/
+*.pyc
+
+# Files an installer run in place leaves in the bundle folder.
+/deploy/**/secrets/
+/deploy/**/server/
+/deploy/**/.deploy-history
+/deploy/**/bin/
+
+# Benchmark output.
+/benchmarks/results/

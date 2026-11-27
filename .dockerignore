@@ -1,0 +1,14 @@
+# Allow-list: only what the image build reads. Secrets, caches and tests never reach the daemon.
+**
+!package.json
+!package-lock.json
+!angular.json
+!tsconfig.json
+!tsconfig.app.json
+!public/**
+!src/**
+src/**/*.spec.ts
+src/app/testing/**
+!docker/Dockerfile
+!docker/entrypoint.sh
+!docker/nginx/**

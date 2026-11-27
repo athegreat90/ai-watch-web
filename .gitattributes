@@ -1,0 +1,11 @@
+# Scripts, configs and workflows run on Linux (Nginx, Alpine, GitHub Actions). A CRLF line ending
+# breaks a shell script and an Nginx config, so these are always checked out with LF.
+*.sh        text eol=lf
+*.py        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.conf      text eol=lf
+*.json      text eol=lf
+*.mjs       text eol=lf
+Dockerfile  text eol=lf
+.dockerignore text eol=lf
