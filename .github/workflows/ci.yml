@@ -80,6 +80,8 @@ jobs:
       - run: docker build -f docker/Dockerfile -t ai-watch-web:test .
       - name: Proxy rules against real containers
         run: npm run test:proxy
+      - name: The standalone Compose file, alone in an empty folder
+        run: bash tests/standalone/standalone.test.sh
       - run: npm run e2e:install
       - name: Browser tests
         run: npm run e2e
