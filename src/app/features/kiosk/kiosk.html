@@ -1,0 +1,101 @@
+<main class="kiosk" [class.cursor-hidden]="cursorHidden()" [style.transform]="shift()">
+  <header class="k-head">
+    <h1 class="k-brand">AI Watch</h1>
+    <span class="k-pill k-status" role="status" [attr.data-status]="status()">{{
+      statusLabel()
+    }}</span>
+    @if (meeting.active()) {
+      <span class="k-pill">Meeting</span>
+    }
+    <span class="k-actions">
+      @if (fullscreen.supported) {
+        <button
+          type="button"
+          class="btn btn-outline-secondary k-button"
+          (click)="toggleFullscreen()"
+        >
+          {{ fullscreen.active() ? 'Exit full screen' : 'Full screen' }}
+        </button>
+      }
+      <a class="btn btn-outline-secondary k-button" routerLink="/dashboard">Close kiosk</a>
+    </span>
+  </header>
+
+  <app-connection-banner [status]="status()" [lastSyncAt]="lastSyncAt()" />
+
+  <div class="k-body">
+    <section class="k-main" aria-label="Sessions">
+      <dl class="k-counts">
+        <div>
+          <dt>Working</dt>
+          <dd>{{ snapshot()?.active_count ?? '–' }}</dd>
+        </div>
+        <div [class.k-attention]="(snapshot()?.attention_count ?? 0) > 0">
+          <dt>Needs you</dt>
+          <dd>{{ snapshot()?.attention_count ?? '–' }}</dd>
+        </div>
+        <div>
+          <dt>Sessions</dt>
+          <dd>{{ snapshot()?.total_count ?? '–' }}</dd>
+        </div>
+      </dl>
+
+      @if (snapshot() === null) {
+        <p class="k-empty">{{ status() === 'connecting' ? 'Connecting…' : 'No data yet.' }}</p>
+      } @else if (rows().length === 0) {
+        <p class="k-empty">No active sessions.</p>
+      } @else {
+        <ul class="k-rows">
+          @for (row of rows(); track row.key) {
+            <li class="k-row">
+              <span class="k-project">{{ row.project }}</span>
+              <span class="k-agent">{{ row.agent }}</span>
+              <app-status-badge [status]="row.status" />
+              @if (activity(row); as text) {
+                <span class="k-activity">{{ text }}</span>
+              }
+            </li>
+          }
+        </ul>
+        @if (moreCount() > 0) {
+          <p class="k-empty">+ {{ moreCount() }} more</p>
+        }
+      }
+    </section>
+
+    <section class="k-side" aria-label="Usage limits">
+      <h2 class="k-title">Usage</h2>
+      @for (row of limits(); track row.agent) {
+        <div class="k-limit">
+          <span class="k-limit-agent">{{ row.agent }}</span>
+          @if (row.windows; as windows) {
+            @for (window of windows; track window.label) {
+              <div class="k-bar-row">
+                <span class="k-bar-label">{{ window.label === '5 hours' ? '5h' : '7d' }}</span>
+                <div
+                  class="k-bar"
+                  role="progressbar"
+                  [attr.aria-label]="row.agent + ' ' + window.label + ' usage'"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  [attr.aria-valuenow]="window.usedPct"
+                >
+                  <i [style.width.%]="window.usedPct" [attr.data-level]="window.level"></i>
+                </div>
+                <span class="k-pct" [attr.data-level]="window.level">{{ window.usedPct }}%</span>
+              </div>
+            }
+          }
+        </div>
+      } @empty {
+        <p class="k-empty">No usage data.</p>
+      }
+    </section>
+  </div>
+
+  <footer class="k-foot">{{ wakeText() }}</footer>
+</main>
+
+<app-celebration-banner />
+<app-attention-overlay />
+<app-idle-robot />

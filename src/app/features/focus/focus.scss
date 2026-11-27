@@ -1,0 +1,76 @@
+.timer {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.clock {
+  margin: 0;
+  font-size: clamp(3.5rem, 14vw, 7rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+
+  &[data-phase='done'] {
+    color: var(--aiw-done);
+  }
+
+  &[data-phase='paused'] {
+    color: var(--aiw-muted);
+  }
+}
+
+.state {
+  margin: 0;
+  color: var(--aiw-muted);
+
+  &[data-phase='done'] {
+    color: var(--aiw-done);
+  }
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  .btn {
+    min-width: 7rem;
+  }
+}
+
+.meeting {
+  max-width: 34rem;
+  padding: 1rem;
+  border: 1px solid var(--aiw-line);
+  border-radius: 8px;
+
+  h2 {
+    margin: 0 0 0.5rem;
+  }
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+
+  input {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--aiw-attention);
+  }
+}
+
+.hint {
+  margin: 0.25rem 0 0;
+  color: var(--aiw-muted);
+  font-size: 0.875rem;
+}
+
+.on {
+  margin: 0.5rem 0 0;
+  color: var(--aiw-attention);
+}

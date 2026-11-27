@@ -1,0 +1,251 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--aiw-bg);
+  overflow: hidden;
+}
+
+.kiosk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 100dvh;
+  padding: max(0.75rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+    max(0.75rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+  font-size: 1.125rem;
+
+  &.cursor-hidden {
+    cursor: none;
+  }
+}
+
+.k-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.k-brand {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.k-pill {
+  padding: 0.125rem 0.75rem;
+  border: 1px solid var(--aiw-line);
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  color: var(--aiw-muted);
+}
+
+.k-status {
+  &[data-status='live'] {
+    color: var(--aiw-done);
+  }
+
+  &[data-status='stale'],
+  &[data-status='demo'],
+  &[data-status='login-required'] {
+    color: var(--aiw-attention);
+  }
+
+  &[data-status='offline'],
+  &[data-status='token-rejected'],
+  &[data-status='config-error'] {
+    color: var(--aiw-error);
+  }
+}
+
+.k-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+// Touch targets of at least 48 px.
+.k-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  padding-inline: 1rem;
+}
+
+.k-body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1rem;
+  align-content: start;
+
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.k-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+
+  div {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--aiw-line);
+    border-radius: 8px;
+  }
+
+  dt {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--aiw-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 2.5rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.k-counts .k-attention {
+  border-color: var(--aiw-attention);
+
+  dd {
+    color: var(--aiw-attention);
+  }
+}
+
+.k-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--aiw-line);
+  border-radius: 8px;
+}
+
+.k-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+
+  & + & {
+    border-top: 1px solid var(--aiw-line);
+  }
+}
+
+.k-project {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.k-agent,
+.k-activity {
+  font-size: 0.9375rem;
+  color: var(--aiw-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.k-activity {
+  color: var(--aiw-fg);
+}
+
+.k-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--aiw-muted);
+}
+
+.k-limit {
+  margin-bottom: 0.75rem;
+}
+
+.k-limit-agent {
+  display: block;
+  margin-bottom: 0.125rem;
+}
+
+.k-bar-row {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) 3.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--aiw-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.k-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--aiw-line);
+  overflow: hidden;
+
+  i {
+    display: block;
+    height: 100%;
+    background: var(--aiw-working);
+
+    &[data-level='warn'] {
+      background: var(--aiw-attention);
+    }
+
+    &[data-level='critical'] {
+      background: var(--aiw-error);
+    }
+  }
+}
+
+.k-pct {
+  text-align: right;
+  color: var(--aiw-fg);
+
+  &[data-level='warn'] {
+    color: var(--aiw-attention);
+  }
+
+  &[data-level='critical'] {
+    color: var(--aiw-error);
+  }
+}
+
+.k-empty {
+  margin: 0.5rem 0;
+  color: var(--aiw-muted);
+}
+
+.k-foot {
+  font-size: 0.8125rem;
+  color: var(--aiw-muted);
+}
+
+/*
+ * A 800x480 screen has about 437 px of room under the safe padding. Six rows plus the "+ N more"
+ * line need more than that at full size, and the kiosk must never scroll. The row count stays at
+ * six so "+ N more" always tells the truth, and the spacing shrinks instead. The end-to-end test
+ * "fits the screen without scrolling" fails if this stops being enough.
+ */
+@media (max-height: 520px) {
+  .k-row {
+    padding-block: 0.25rem;
+  }
+
+  .k-counts {
+    margin-bottom: 0.5rem;
+
+    dd {
+      font-size: 2rem;
+    }
+  }
+}

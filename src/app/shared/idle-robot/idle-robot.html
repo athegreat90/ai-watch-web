@@ -1,0 +1,23 @@
+@if (idle.active()) {
+  <div
+    class="idle"
+    role="img"
+    aria-label="Idle screen. Touch the screen or press a key to wake it."
+  >
+    <svg
+      class="robot"
+      [attr.data-position]="idle.position()"
+      viewBox="0 0 120 140"
+      aria-hidden="true"
+    >
+      <line class="line" x1="60" y1="8" x2="60" y2="28" />
+      <circle class="dot" cx="60" cy="8" r="5" />
+      <rect class="line" x="16" y="28" width="88" height="72" rx="18" />
+      <rect class="eye" x="36" y="52" width="14" height="18" rx="4" />
+      <rect class="eye" x="70" y="52" width="14" height="18" rx="4" />
+      <line class="line" x1="46" y1="86" x2="74" y2="86" />
+      <line class="line" x1="40" y1="100" x2="40" y2="124" />
+      <line class="line" x1="80" y1="100" x2="80" y2="124" />
+    </svg>
+  </div>
+}

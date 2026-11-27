@@ -1,0 +1,74 @@
+$colors: var(--aiw-done), var(--aiw-working), var(--aiw-attention), var(--aiw-error);
+
+.celebrate {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 1060;
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  width: min(22rem, calc(100% - 2rem));
+  padding: 1rem 1.25rem;
+  overflow: hidden;
+  text-align: center;
+  color: var(--aiw-fg);
+  background: var(--aiw-bg);
+  border: 1px solid var(--aiw-done);
+  border-radius: 12px;
+  transform: translateX(-50%);
+}
+
+.celebrate-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--aiw-done);
+}
+
+.celebrate-sub {
+  margin: 0 0 0.5rem;
+  color: var(--aiw-muted);
+  overflow-wrap: anywhere;
+}
+
+// Transform and opacity only, so it stays cheap on a small device.
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  i {
+    position: absolute;
+    top: -0.5rem;
+    width: 0.375rem;
+    height: 0.75rem;
+    opacity: 0;
+    animation: fall 2.4s ease-in 1 both;
+  }
+
+  @for $n from 1 through 14 {
+    i:nth-child(#{$n}) {
+      left: ($n * 7 - 3) * 1%;
+      background: nth($colors, ($n % 4) + 1);
+      animation-delay: #{($n % 5) * 0.12}s;
+    }
+  }
+}
+
+@keyframes fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(9rem) rotate(240deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+}

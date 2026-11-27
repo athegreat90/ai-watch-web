@@ -1,0 +1,113 @@
+// AMOLED is the default theme. It applies when no data-theme attribute is set.
+// Rules: ground is exactly #000, elevation by hairline border, no shadows or gradients.
+:root,
+:root[data-theme='amoled'] {
+  color-scheme: dark;
+  --aiw-bg: #000000;
+  --aiw-surface: #0b0c0d;
+  --aiw-line: #1d2023;
+  --aiw-fg: #e4e7ea;
+  --aiw-muted: #8b939b;
+  --aiw-attention: #f5a524;
+  --aiw-working: #5aa9ff;
+  --aiw-done: #3ddc97;
+  --aiw-error: #ff6b6b;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --aiw-bg: #0f1114;
+  --aiw-surface: #161a1e;
+  --aiw-line: #262b31;
+  --aiw-fg: #e4e7ea;
+  --aiw-muted: #9aa3ab;
+  --aiw-attention: #f5a524;
+  --aiw-working: #5aa9ff;
+  --aiw-done: #3ddc97;
+  --aiw-error: #ff6b6b;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --aiw-bg: #f6f7f8;
+  --aiw-surface: #ffffff;
+  --aiw-line: #d9dde1;
+  --aiw-fg: #15181b;
+  --aiw-muted: #5b646c;
+  --aiw-attention: #8f5600;
+  --aiw-working: #1d6fd1;
+  --aiw-done: #12804f;
+  --aiw-error: #c62828;
+}
+
+// Meeting mode dims the content to 70 % opacity. That pulls every colour toward the background, so
+// the text colours are moved the other way by the amount that keeps them at 4.5:1 once dimmed.
+:root[data-theme='amoled'] .dimmed,
+:root[data-theme='dark'] .dimmed {
+  --aiw-muted: #afb7be;
+  --aiw-working: #78b7ff;
+  --aiw-error: #ff8a8a;
+}
+
+:root[data-theme='light'] .dimmed {
+  --aiw-muted: #283037;
+  --aiw-attention: #4a2c00;
+  --aiw-working: #08306a;
+  --aiw-done: #064226;
+  --aiw-error: #7a1010;
+}
+
+// Bootstrap reads these, so its components follow the active theme.
+:root,
+[data-bs-theme='dark'],
+[data-bs-theme='light'] {
+  --bs-body-bg: var(--aiw-bg);
+  --bs-body-color: var(--aiw-fg);
+  --bs-emphasis-color: var(--aiw-fg);
+  --bs-secondary-color: var(--aiw-muted);
+  --bs-border-color: var(--aiw-line);
+  --bs-link-color: var(--aiw-working);
+  --bs-link-hover-color: var(--aiw-fg);
+}
+
+// Bootstrap fills an outline button with its colour on hover and focus. On AMOLED that is a large
+// bright area, so the fill is a quiet surface and the border and text keep the colour.
+.btn[class*='btn-outline-'] {
+  --bs-btn-hover-bg: var(--aiw-surface);
+  --bs-btn-hover-color: var(--aiw-fg);
+  --bs-btn-active-bg: var(--aiw-line);
+  --bs-btn-active-color: var(--aiw-fg);
+  --bs-btn-disabled-color: var(--aiw-muted);
+  --bs-btn-hover-border-color: var(--bs-btn-border-color);
+  --bs-btn-active-border-color: var(--bs-btn-border-color);
+}
+
+// Bootstrap's own grey and yellow do not reach a 4.5:1 contrast on every theme, so the two
+// outline colours the app uses come from the theme's muted and attention tokens instead.
+.btn-outline-secondary {
+  --bs-btn-color: var(--aiw-muted);
+  --bs-btn-border-color: var(--aiw-muted);
+}
+
+.btn-outline-warning {
+  --bs-btn-color: var(--aiw-attention);
+  --bs-btn-border-color: var(--aiw-attention);
+}
+
+// A clear focus ring for keyboard users in every theme.
+:focus-visible {
+  outline: 2px solid var(--aiw-working);
+  outline-offset: 2px;
+}
+
+.btn:focus-visible {
+  outline: 0;
+  box-shadow:
+    0 0 0 2px var(--aiw-bg),
+    0 0 0 4px var(--aiw-working);
+}
+
+body {
+  background: var(--aiw-bg);
+  color: var(--aiw-fg);
+}

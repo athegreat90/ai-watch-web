@@ -1,0 +1,62 @@
+.idle {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #000;
+}
+
+.robot {
+  position: absolute;
+  width: clamp(5rem, 14vmin, 9rem);
+  height: auto;
+  fill: none;
+  stroke: var(--aiw-attention);
+  stroke-width: 4;
+  stroke-linecap: round;
+
+  // The four corners, a little in from the edges.
+  &[data-position='0'] {
+    top: 12%;
+    left: 12%;
+  }
+
+  &[data-position='1'] {
+    top: 12%;
+    right: 12%;
+  }
+
+  &[data-position='2'] {
+    right: 12%;
+    bottom: 12%;
+  }
+
+  &[data-position='3'] {
+    bottom: 12%;
+    left: 12%;
+  }
+}
+
+.dot,
+.eye {
+  fill: var(--aiw-attention);
+}
+
+// The eyes close for a moment, using transform only.
+.eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 4s steps(1) infinite;
+}
+
+@keyframes blink {
+  94%,
+  97% {
+    transform: scaleY(0.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eye {
+    animation: none;
+  }
+}

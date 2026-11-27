@@ -1,0 +1,53 @@
+<div class="head">
+  <h1 class="h4">Usage limits</h1>
+  <div class="sync">
+    @if (syncedAgo(); as text) {
+      <span class="sync-text">{{ text }}</span>
+    }
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refresh()">
+      Refresh
+    </button>
+  </div>
+</div>
+
+<app-connection-banner [status]="status()" [lastSyncAt]="lastSyncAt()" />
+
+@if (snapshot() === null) {
+  <p class="empty">{{ status() === 'connecting' ? 'Connecting…' : 'No data yet.' }}</p>
+} @else {
+  <div class="agents">
+    @for (row of rows(); track row.agent) {
+      <section class="agent" [attr.aria-label]="row.agent + ' usage'">
+        <h2 class="h6">{{ row.agent }}</h2>
+        @if (row.windows; as windows) {
+          @for (window of windows; track window.label) {
+            <div class="window">
+              <div class="window-head">
+                <span>{{ window.label }}</span>
+                <span class="pct" [attr.data-level]="window.level">{{ window.usedPct }} %</span>
+              </div>
+              <div
+                class="bar"
+                role="progressbar"
+                [attr.aria-label]="row.agent + ' ' + window.label + ' usage'"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuenow]="window.usedPct"
+              >
+                <i [style.width.%]="window.usedPct" [attr.data-level]="window.level"></i>
+              </div>
+              <div class="window-foot">
+                <span>{{ window.remainingPct }} % left</span>
+                <span>{{ resetText(window) }}</span>
+              </div>
+            </div>
+          }
+        } @else {
+          <p class="empty">
+            No usage data. The agent has not reported, or its data is older than 15 minutes.
+          </p>
+        }
+      </section>
+    }
+  </div>
+}

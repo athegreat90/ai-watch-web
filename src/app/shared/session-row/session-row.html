@@ -1,0 +1,19 @@
+<a class="row-link" [routerLink]="link()">
+  <span class="row-initials" aria-hidden="true">{{ view().initials }}</span>
+  <span class="row-main">
+    <span class="row-project">{{ view().project }}</span>
+    <span class="row-sub"
+      >{{ view().agent }}
+      @if (view().detail) {
+        · {{ view().detail }}
+      }
+    </span>
+  </span>
+  <span class="row-meta">
+    <app-status-badge [status]="view().status" />
+    @if (activity(); as text) {
+      <span class="row-activity">{{ text }}</span>
+    }
+    <span class="row-updated">Updated {{ updated() }}</span>
+  </span>
+</a>

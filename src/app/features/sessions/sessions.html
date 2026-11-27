@@ -1,0 +1,25 @@
+<div class="head">
+  <h1 class="h4">Sessions</h1>
+  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refresh()">
+    Refresh
+  </button>
+</div>
+
+<app-connection-banner [status]="status()" [lastSyncAt]="lastSyncAt()" />
+
+@if (snapshot() === null) {
+  <p class="empty">{{ status() === 'connecting' ? 'Connecting…' : 'No data yet.' }}</p>
+} @else if (views().length === 0) {
+  <p class="empty">No active sessions.</p>
+} @else {
+  <ul class="rows">
+    @for (view of views(); track view.key) {
+      <li><app-session-row [view]="view" /></li>
+    }
+  </ul>
+  @if (hiddenCount() > 0) {
+    <p class="empty">
+      {{ hiddenCount() }} more session(s) are not listed. The server lists at most 40.
+    </p>
+  }
+}

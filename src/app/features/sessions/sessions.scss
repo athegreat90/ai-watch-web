@@ -1,0 +1,38 @@
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.banner {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--aiw-attention);
+  border-radius: 6px;
+  color: var(--aiw-attention);
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--aiw-line);
+  border-radius: 8px;
+  overflow: hidden;
+
+  li + li {
+    border-top: 1px solid var(--aiw-line);
+  }
+}
+
+.empty {
+  margin-top: 0.75rem;
+  color: var(--aiw-muted);
+}

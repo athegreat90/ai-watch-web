@@ -1,0 +1,14 @@
+@if (current()) {
+  <div class="celebrate" role="status">
+    <div class="confetti" aria-hidden="true">
+      @for (piece of confetti; track piece) {
+        <i></i>
+      }
+    </div>
+    <p class="celebrate-title">Task done!</p>
+    <p class="celebrate-sub">{{ summary() }}</p>
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="dismiss()">
+      Dismiss
+    </button>
+  </div>
+}

@@ -1,0 +1,33 @@
+<a class="back" routerLink="/sessions">← All sessions</a>
+
+<app-connection-banner [status]="status()" [lastSyncAt]="lastSyncAt()" />
+
+@if (view(); as v) {
+  <header class="title">
+    <h1 class="h4">{{ v.project }}</h1>
+    <app-status-badge [status]="v.status" />
+  </header>
+  <p class="agent">{{ v.agent }}</p>
+  @if (v.detail) {
+    <p class="detail">{{ v.detail }}</p>
+  }
+  @if (v.status === 'needs_attention') {
+    @if (acknowledged()) {
+      <p class="ack">Acknowledged. The alert stays quiet until this session changes.</p>
+    } @else {
+      <button type="button" class="btn btn-sm btn-outline-warning" (click)="acknowledge()">
+        Acknowledge
+      </button>
+    }
+  }
+  <dl class="facts">
+    @for (fact of facts(); track fact.label) {
+      <div>
+        <dt>{{ fact.label }}</dt>
+        <dd [class.mono]="fact.mono">{{ fact.value }}</dd>
+      </div>
+    }
+  </dl>
+} @else if (!loaded()) {
+  <p class="empty">Loading…</p>
+}

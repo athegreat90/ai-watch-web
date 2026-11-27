@@ -1,0 +1,45 @@
+<div class="head">
+  <h1 class="h4">Dashboard</h1>
+  <div class="sync">
+    @if (syncedAgo(); as text) {
+      <span class="sync-text">{{ text }}</span>
+    }
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refresh()">
+      Refresh
+    </button>
+  </div>
+</div>
+
+<app-connection-banner [status]="status()" [lastSyncAt]="lastSyncAt()" />
+
+<dl class="tiles">
+  <div class="tile">
+    <dt>Working</dt>
+    <dd>{{ snapshot()?.active_count ?? '–' }}</dd>
+  </div>
+  <div class="tile" [class.tile-attention]="(snapshot()?.attention_count ?? 0) > 0">
+    <dt>Needs you</dt>
+    <dd>{{ snapshot()?.attention_count ?? '–' }}</dd>
+  </div>
+  <div class="tile">
+    <dt>Sessions</dt>
+    <dd>{{ snapshot()?.total_count ?? '–' }}</dd>
+  </div>
+</dl>
+
+@if (snapshot() === null) {
+  <p class="empty">{{ status() === 'connecting' ? 'Connecting…' : 'No data yet.' }}</p>
+} @else if (views().length === 0) {
+  <p class="empty">No active sessions.</p>
+} @else {
+  <ul class="rows">
+    @for (view of views(); track view.key) {
+      <li><app-session-row [view]="view" /></li>
+    }
+  </ul>
+  @if (hiddenCount() > 0) {
+    <p class="empty">
+      {{ hiddenCount() }} more session(s). <a routerLink="/sessions">See all sessions</a>
+    </p>
+  }
+}

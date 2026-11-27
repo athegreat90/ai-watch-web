@@ -1,0 +1,42 @@
+<header class="shell-header">
+  <a class="visually-hidden-focusable" href="/" (click)="skipToMain($event, main)"
+    >Skip to content</a
+  >
+  <span class="shell-brand">AI Watch</span>
+  <nav aria-label="Main" class="nav">
+    @for (item of items; track item.path) {
+      <a
+        class="nav-link"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        >{{ item.label }}</a
+      >
+    }
+  </nav>
+  <div class="shell-right">
+    @if (timerText(); as text) {
+      <a class="shell-pill shell-timer" routerLink="/focus" [attr.data-phase]="timerPhase()">{{
+        text
+      }}</a>
+    }
+    @if (meeting.active()) {
+      <span class="shell-pill shell-meeting" [attr.data-attention]="needsYou()">Meeting</span>
+    }
+    <span class="shell-pill shell-status" role="status" [attr.data-status]="status()">{{
+      statusLabel()
+    }}</span>
+  </div>
+</header>
+@if (demo()) {
+  <p class="demo-banner" role="status">
+    Demo mode: this is example data, not your sessions.
+    <a routerLink="/settings">Turn it off in Settings</a>
+  </p>
+}
+<main #main id="main" tabindex="-1" class="shell-main" [class.dimmed]="meeting.active()">
+  <router-outlet />
+</main>
+<app-celebration-banner />
+<app-attention-overlay />
+<app-idle-robot />

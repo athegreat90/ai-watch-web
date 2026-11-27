@@ -1,0 +1,59 @@
+.row-link {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.875rem;
+  padding: 0.75rem 1rem;
+  color: var(--aiw-fg);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--aiw-surface);
+  }
+}
+
+.row-initials {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--aiw-line);
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--aiw-muted);
+}
+
+.row-main {
+  display: grid;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.row-project {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.row-sub {
+  color: var(--aiw-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--aiw-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.row-activity {
+  color: var(--aiw-fg);
+}

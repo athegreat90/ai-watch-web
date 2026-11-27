@@ -1,0 +1,30 @@
+<dialog #dialog class="alert" aria-labelledby="alert-title" (close)="dismiss()">
+  <h2 id="alert-title" class="alert-title">Needs you</h2>
+  <ul class="alert-list">
+    @for (view of pending(); track view.key) {
+      <li class="alert-item">
+        <div class="alert-who">
+          <strong>{{ view.project }}</strong>
+          <span>{{ view.agent }}</span>
+          @if (view.detail) {
+            <span>{{ view.detail }}</span>
+          }
+          <span class="alert-waiting">Waiting {{ waiting(view) }}</span>
+        </div>
+        <div class="alert-actions">
+          <button type="button" class="btn btn-sm btn-outline-warning" (click)="acknowledge(view)">
+            Acknowledge
+          </button>
+          <a class="btn btn-sm btn-outline-secondary" [routerLink]="link(view)" (click)="dismiss()"
+            >Open</a
+          >
+        </div>
+      </li>
+    }
+  </ul>
+  <p class="alert-hint">
+    Dismiss hides this. It comes back in {{ repeatMinutes }} minutes while a session still needs
+    you.
+  </p>
+  <button type="button" class="btn btn-outline-secondary" (click)="dismiss()">Dismiss</button>
+</dialog>

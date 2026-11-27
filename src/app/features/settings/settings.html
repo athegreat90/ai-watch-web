@@ -1,0 +1,104 @@
+<h1 class="h4">Settings</h1>
+<p class="intro">These are saved in this browser. Nothing secret is stored here.</p>
+
+<fieldset class="group">
+  <legend>Appearance</legend>
+  @for (theme of themes; track theme.value) {
+    <label class="choice">
+      <input
+        type="radio"
+        name="theme"
+        [value]="theme.value"
+        [checked]="themeService.choice() === theme.value"
+        (change)="chooseTheme(theme.value)"
+      />
+      <span class="choice-text">
+        <span>{{ theme.label }}</span>
+        <small>{{ theme.hint }}</small>
+      </span>
+    </label>
+  }
+</fieldset>
+
+<fieldset class="group">
+  <legend>Connection</legend>
+  <div class="line">
+    <label for="poll">Update every</label>
+    <select id="poll" #poll (change)="choosePoll(poll.value)">
+      @for (option of pollOptions(); track option.ms) {
+        <option [value]="option.ms" [selected]="option.ms === selectedMs()">
+          {{ option.label }}
+        </option>
+      }
+    </select>
+    @if (needsReload()) {
+      <button type="button" class="btn btn-sm btn-outline-warning" (click)="reload()">
+        Reload to apply
+      </button>
+    }
+  </div>
+  <div class="line">
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="testConnection()">
+      Test connection
+    </button>
+    <span class="result" role="status" [attr.data-state]="check().state">{{ check().text }}</span>
+  </div>
+  <small class="note">
+    The test checks that the server answers. The connection label in the header also tells you
+    whether the server accepts the proxy's token.
+  </small>
+</fieldset>
+
+<fieldset class="group">
+  <legend>Alerts</legend>
+  <label class="choice">
+    <input
+      type="checkbox"
+      #sound
+      [checked]="store.sound()"
+      [disabled]="!notifier.soundSupported"
+      (change)="toggleSound(sound)"
+    />
+    <span class="choice-text">
+      <span>Play a tone</span>
+      <small>
+        When a session needs you and when the focus timer ends.
+        @if (!notifier.soundSupported) {
+          This browser cannot play sound.
+        }
+      </small>
+    </span>
+  </label>
+  @if (store.sound()) {
+    <button type="button" class="btn btn-sm btn-outline-secondary tone" (click)="testTone()">
+      Play a test tone
+    </button>
+  }
+  <label class="choice">
+    <input
+      type="checkbox"
+      #notifications
+      [checked]="store.notifications()"
+      [disabled]="!notifier.notificationsSupported"
+      (change)="toggleNotifications(notifications)"
+    />
+    <span class="choice-text">
+      <span>Desktop notifications</span>
+      <small>{{ notificationText() }}</small>
+    </span>
+  </label>
+</fieldset>
+
+<fieldset class="group">
+  <legend>Demo mode</legend>
+  <label class="choice">
+    <input type="checkbox" #demo [checked]="store.demo()" (change)="toggleDemo(demo)" />
+    <span class="choice-text">
+      <span>Show example data</span>
+      <small>
+        Fake sessions and limits for trying the app out. It is shown clearly while on and it never
+        mixes with real data. Turning it on or off reloads the page.
+      </small>
+    </span>
+  </label>
+</fieldset>

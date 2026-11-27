@@ -1,0 +1,33 @@
+<h1 class="h4">Focus timer</h1>
+
+<section class="timer" aria-label="Focus timer">
+  <p class="clock" [attr.data-phase]="phase()">{{ clock() }}</p>
+  <p class="state" role="status" [attr.data-phase]="phase()">{{ stateText() }}</p>
+  <div class="buttons">
+    <button type="button" class="btn btn-lg btn-outline-warning" (click)="toggle()">
+      {{ primaryLabel() }}
+    </button>
+    <button
+      type="button"
+      class="btn btn-lg btn-outline-secondary"
+      [disabled]="phase() === 'idle'"
+      (click)="reset()"
+    >
+      Reset
+    </button>
+  </div>
+</section>
+
+<section class="meeting" aria-labelledby="meeting-title">
+  <h2 id="meeting-title" class="h6">Meeting mode</h2>
+  <label class="switch">
+    <input type="checkbox" [checked]="meeting.manual()" (change)="toggleMeeting()" />
+    <span>Meeting mode</span>
+  </label>
+  <p class="hint">
+    It quiets the alert and the celebration and dims the screen. It is also on while the timer runs.
+  </p>
+  @if (meeting.active()) {
+    <p class="on" role="status">Meeting mode is on.</p>
+  }
+</section>

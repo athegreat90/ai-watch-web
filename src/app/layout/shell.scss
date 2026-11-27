@@ -1,0 +1,139 @@
+:host {
+  display: block;
+}
+
+.shell-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--aiw-line);
+}
+
+.shell-brand {
+  font-weight: 600;
+}
+
+.nav-link {
+  color: var(--aiw-muted);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--aiw-fg);
+  }
+
+  &.active {
+    color: var(--aiw-fg);
+    background: var(--aiw-surface);
+    border-color: var(--aiw-line);
+  }
+}
+
+.shell-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.shell-pill {
+  padding: 0.125rem 0.625rem;
+  border: 1px solid var(--aiw-line);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--aiw-muted);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.shell-timer {
+  &[data-phase='running'] {
+    color: var(--aiw-fg);
+  }
+
+  &[data-phase='done'] {
+    color: var(--aiw-done);
+  }
+}
+
+// Muted in a meeting, amber when a session needs you.
+.shell-meeting[data-attention='true'] {
+  color: var(--aiw-attention);
+  border-color: var(--aiw-attention);
+}
+
+.shell-status {
+  &[data-status='live'] {
+    color: var(--aiw-done);
+  }
+
+  &[data-status='stale'],
+  &[data-status='demo'],
+  &[data-status='login-required'] {
+    color: var(--aiw-attention);
+  }
+
+  &[data-status='offline'],
+  &[data-status='token-rejected'],
+  &[data-status='config-error'] {
+    color: var(--aiw-error);
+  }
+}
+
+.demo-banner {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--aiw-attention);
+  color: var(--aiw-attention);
+  background: var(--aiw-bg);
+
+  a {
+    color: inherit;
+    text-decoration: underline;
+  }
+}
+
+// On a phone the menu gets its own row and scrolls sideways, so nothing wraps into a tall block.
+@media (max-width: 700px) {
+  .shell-header {
+    gap: 0.5rem 0.75rem;
+  }
+
+  .shell-brand {
+    order: 1;
+  }
+
+  .shell-right {
+    order: 2;
+  }
+
+  .nav {
+    order: 3;
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--aiw-line) transparent;
+  }
+
+  .nav-link {
+    white-space: nowrap;
+  }
+}
+
+.shell-main {
+  padding: 1rem;
+  outline: none;
+}
+
+// A simulated dimming for meeting mode. The browser cannot change the screen's brightness. The
+// text colours for the dimmed state are in `styles/_themes.scss`, so the text stays readable.
+.dimmed {
+  opacity: 0.7;
+}
