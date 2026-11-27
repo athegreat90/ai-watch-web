@@ -68,6 +68,7 @@ Instructions for coding agents working on AI Watch Web. Read `MEMORY.md` first f
 - `npm run security:repo` and `npm run security:image amd64|arm64` need Docker and the network. `npm run test:security` does not. A new script under `security/` gets a test in `security/test_security.py`, and its pattern checks get a mutation run (a test that passes with the rule broken proves nothing).
 - Trivy knows the AWS documentation example keys and ignores them on purpose, so a planted `AKIAIOSFODNN7EXAMPLE` proves nothing. Use a random token with a real format to test the secret scan.
 - On Windows, `python3` can be a Store stub that does nothing, so the scripts pick the first of `python3` and `python` that really runs.
+- Nginx finds `UPSTREAM_URL` with its own resolver, which does not read `/etc/hosts`. A name from `--add-host` (such as `host.docker.internal:host-gateway`) works on Docker Desktop and fails with 502 on Linux, which is how the first CI run failed. Tests that need to reach the host use its address (`hostAddress` in `tests/proxy/proxy.test.mjs`). A mock a test forgets to close must not keep Node alive (`server.unref()`), otherwise a failing run hangs until the job timeout.
 - Prove Nginx behaviour with tests (query stripping, the `X-AIW-Upstream-Status` header, microcache). Do not rely on the documentation alone.
 
 ## Testing
