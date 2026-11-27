@@ -1,0 +1,40 @@
+# Optional: run the AI Watch server in the same Compose project, so the page reaches it by name
+# (http://ai-watch-server:8765) and no port of the server has to be opened to the page.
+# The installer adds this file to COMPOSE_FILE (in .env) when you pass --with-server, and creates
+# server/config.local.json (with a new random token) and secrets/monitor_key (the same token).
+#
+# The server keeps its own port published so hooks, the watch and the checker can still reach it. It is
+# private (127.0.0.1) unless MONITOR_HOST_BIND is set. It has no TLS: use it on a trusted network only.
+services:
+  ai-watch-server:
+    image: ${AI_WATCH_SERVER_IMAGE:-ghcr.io/athegreat90/ai-watch-server:latest}
+    init: true
+    restart: unless-stopped
+    ports:
+      - '${MONITOR_HOST_BIND:-127.0.0.1}:${MONITOR_HOST_PORT:-8765}:8765'
+    environment:
+      MONITOR_BIND: '0.0.0.0'
+    # Must be able to read config.local.json (kept private, mode 0600): the installer sets these to your user.
+    user: '${PUID:-1000}:${PGID:-1000}'
+    volumes:
+      - type: bind
+        source: ./server/config.local.json
+        target: /app/config.local.json
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=16m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+  web:
+    environment:
+      UPSTREAM_URL: http://ai-watch-server:8765
+    depends_on:
+      ai-watch-server:
+        condition: service_healthy

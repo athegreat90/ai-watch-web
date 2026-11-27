@@ -1,0 +1,13 @@
+# Optional: ask for a user name and password before the page is shown (HTTP basic authentication).
+# The installer adds this file to COMPOSE_FILE (in .env) when you pass --auth-user, and writes
+# secrets/htpasswd with a salted SHA-512 hash of the password (the password itself is never stored).
+#
+# Basic authentication is sent in clear text over plain HTTP. On a network you do not fully trust, put
+# TLS in front (a reverse proxy) or reach the page over a private network such as Tailscale.
+services:
+  web:
+    secrets:
+      - htpasswd
+secrets:
+  htpasswd:
+    file: ./secrets/htpasswd

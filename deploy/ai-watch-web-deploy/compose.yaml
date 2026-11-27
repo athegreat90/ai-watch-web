@@ -1,0 +1,42 @@
+# AI Watch Web: standalone deployment. Needs only Docker with Compose; no source checkout.
+# Choose the image in .env (AI_WATCH_WEB_IMAGE): ":latest" tracks the newest stable release,
+# ":vX.Y.Z" pins one immutable version. A running container never changes by itself: pull and
+# recreate it (./install.sh --update) to move to a newer "latest".
+#
+# The monitor token of the AI Watch server is a Docker secret read from ./secrets/monitor_key. It
+# never goes into an environment variable, an image layer or a log. The installer writes it.
+#
+# Optional pieces are separate files and are listed in COMPOSE_FILE (in .env) by the installer:
+#   compose.server.yaml  also runs the AI Watch server image in the same network (--with-server)
+#   compose.auth.yaml    asks for a user name and password before showing the page (--auth-user)
+name: ai-watch-web
+services:
+  web:
+    image: ${AI_WATCH_WEB_IMAGE:-ghcr.io/athegreat90/ai-watch-web:latest}
+    init: true
+    restart: unless-stopped
+    environment:
+      # Where the AI Watch server is. A container cannot reach the 127.0.0.1 of this machine: use the
+      # server's LAN address, or --with-server to run it next to the page.
+      UPSTREAM_URL: ${UPSTREAM_URL:-http://ai-watch-server:8765}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-}
+    secrets:
+      - monitor_key
+    ports:
+      # Private by default: the page has no login unless compose.auth.yaml is on. For other devices set
+      # WEB_HOST_BIND to this host's LAN IP, and read "Remote access" in README.md first.
+      - '${WEB_HOST_BIND:-127.0.0.1}:${WEB_HOST_PORT:-8080}:8080'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 64m
+    cpus: 0.5
+secrets:
+  monitor_key:
+    file: ./secrets/monitor_key
