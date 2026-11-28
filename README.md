@@ -189,11 +189,10 @@ Invoke-WebRequest -UseBasicParsing -Uri https://raw.githubusercontent.com/athegr
 ```sh
 mkdir -p secrets && chmod 700 secrets
 printf 'Server token: '; stty -echo; IFS= read -r t; stty echo; printf '\n'
-printf '%s' "$t" > secrets/monitor_key; unset t
-chmod 644 secrets/monitor_key      # the container runs as user 101 and must be able to read it
+printf '%s' "$t" > secrets/monitor_key && chmod 644 secrets/monitor_key; unset t
 ```
 
-The first two lines work in bash, zsh and sh, and the token is not shown as you type it. If you press Ctrl-C at the prompt, run `stty echo`.
+Mode 644 is needed because the container runs as user 101 and must be able to read the file; the folder stays private at 700. These lines work in bash, zsh and sh, and the token is not shown as you type it. If you press Ctrl-C at the prompt, run `stty echo`.
 
 ```powershell
 mkdir secrets | Out-Null

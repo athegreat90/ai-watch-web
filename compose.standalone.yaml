@@ -8,10 +8,10 @@
 #    It is a Docker secret: it never goes into an environment variable, an image layer or a log.
 #      mkdir -p secrets && chmod 700 secrets
 #      printf 'Server token: '; stty -echo; IFS= read -r t; stty echo; printf '\n'
-#      printf '%s' "$t" > secrets/monitor_key; unset t
-#      chmod 644 secrets/monitor_key    # the container runs as user 101 and must be able to read it
-#    The first two lines work in bash, zsh and sh, and do not show the token as you type it (if you press
-#    Ctrl-C at the prompt, run "stty echo"). You can also paste the token into the file with any editor.
+#      printf '%s' "$t" > secrets/monitor_key && chmod 644 secrets/monitor_key; unset t
+#    Mode 644 because the container runs as user 101 and must be able to read the file. These lines work in
+#    bash, zsh and sh, and do not show the token as you type it (if you press Ctrl-C at the prompt, run
+#    "stty echo"). You can also paste the token into the file with any editor.
 #
 # 3. Tell it where the server is, then start it. Use the server's LAN address, not 127.0.0.1 (a container
 #    cannot reach the loopback of its host) and not a name that only /etc/hosts knows (Nginx ignores it).
