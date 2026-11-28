@@ -2,7 +2,7 @@
 
 How to run AI Watch Web. Pick the method that fits; the first one is the recommended one.
 
-> **Status:** the image, the installers and their tests exist and pass on Docker Desktop for Windows. Nothing has been released yet, so `ghcr.io/athegreat90/ai-watch-web` does not exist until the first release (`RELEASING.md`). Until then build the image yourself (`npm run docker:build`) and use `AI_WATCH_IMAGE_REPO` as the tests do.
+> **Status:** `v0.1.0` is published (2026-11-27), so `ghcr.io/athegreat90/ai-watch-web` exists and anonymous pulls work. The image, the installers and their tests pass in CI and on Docker Desktop for Windows against a locally built image. Nobody has yet run the installers from the downloaded `v0.1.0` zip. `compose.standalone.yaml` was run from an empty folder with the real published image.
 
 ## What you need to decide first
 
@@ -30,7 +30,8 @@ In the unzipped bundle:
 ```sh
 cp env.example .env
 mkdir -p secrets && chmod 700 secrets
-IFS= read -rs -p 'Server token: ' t && printf '%s' "$t" > secrets/monitor_key && unset t && chmod 644 secrets/monitor_key
+printf 'Server token: '; stty -echo; IFS= read -r t; stty echo; printf '\n'
+printf '%s' "$t" > secrets/monitor_key; unset t; chmod 644 secrets/monitor_key
 # edit .env: UPSTREAM_URL=http://192.168.1.50:8765
 docker compose pull
 docker compose up -d --wait
@@ -51,6 +52,12 @@ docker run -d --name ai-watch-web --restart unless-stopped \
 ```
 
 The key file must be readable by user 101 (the container's user): mode 644 inside a private directory.
+
+## Method D: one Compose file (no zip, no clone)
+
+For a server that already runs somewhere: a single file, `compose.standalone.yaml`, saved as `compose.yaml` next to `secrets/monitor_key` and a `.env` with `UPSTREAM_URL`. It uses only the published image (it has no `build` section) and needs nothing else from this repository. The steps, for Linux, macOS and Windows PowerShell, are in the "Docker Compose standalone" section of `README.md`, and the comments at the top of the file say the same.
+
+It is Method B without the zip: no installer, no `compose.server.yaml`, no `compose.auth.yaml`, no `.deploy-history` rollback and no end-of-install check. `UPSTREAM_URL` is required, because the default of the bundle (`http://ai-watch-server:8765`) only exists when the server runs in the same project. `tests/standalone/standalone.test.sh` checks it alone in an empty folder, and CI runs it on every pull request.
 
 ## From source
 

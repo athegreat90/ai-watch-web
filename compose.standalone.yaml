@@ -1,0 +1,58 @@
+# AI Watch Web as ONE file. It needs only Docker with Compose v2: no Dockerfile, no Git clone, no Node.
+# It runs the published image and nothing else, so the AI Watch server must already be running somewhere
+# (to run the server next to the page too, use the deployment bundle: docs/DEPLOYMENT.md).
+#
+# 1. Save this file as compose.yaml in an empty folder.
+#
+# 2. Put the monitor token of your AI Watch server (the "token" in its config.local.json) in a file.
+#    It is a Docker secret: it never goes into an environment variable, an image layer or a log.
+#      mkdir -p secrets && chmod 700 secrets
+#      printf 'Server token: '; stty -echo; IFS= read -r t; stty echo; printf '\n'
+#      printf '%s' "$t" > secrets/monitor_key; unset t
+#      chmod 644 secrets/monitor_key    # the container runs as user 101 and must be able to read it
+#    The first two lines work in bash, zsh and sh, and do not show the token as you type it (if you press
+#    Ctrl-C at the prompt, run "stty echo"). You can also paste the token into the file with any editor.
+#
+# 3. Tell it where the server is, then start it. Use the server's LAN address, not 127.0.0.1 (a container
+#    cannot reach the loopback of its host) and not a name that only /etc/hosts knows (Nginx ignores it).
+#      echo 'UPSTREAM_URL=http://192.168.1.50:8765' > .env
+#      docker compose up -d --wait
+#
+# 4. Open http://127.0.0.1:8080
+#
+# Settings (environment variables or a .env file next to this file):
+#   UPSTREAM_URL        required. Where the AI Watch server is: http://host or http://host:port
+#   AI_WATCH_WEB_IMAGE  the image. ":latest" follows the newest stable release; pin ":v0.1.0" to stay on one
+#                       version (version tags never change). A running container does not update by itself:
+#                       "docker compose pull && docker compose up -d" moves it to a newer image.
+#   WEB_HOST_BIND       the address the page listens on. 127.0.0.1 (default) is this machine only. The page has
+#                       no login, so read "Remote access" in docs/DEPLOYMENT.md before using a LAN address.
+#   WEB_HOST_PORT       the port on this machine (default 8080)
+#   POLL_INTERVAL_MS    the default update interval, 1000 to 60000 (a choice made in Settings wins)
+name: ai-watch-web
+
+services:
+  web:
+    image: ${AI_WATCH_WEB_IMAGE:-ghcr.io/athegreat90/ai-watch-web:latest}
+    init: true
+    restart: unless-stopped
+    environment:
+      UPSTREAM_URL: ${UPSTREAM_URL:?Set UPSTREAM_URL to where the AI Watch server is, for example http://192.168.1.50:8765}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-}
+    secrets:
+      - monitor_key
+    ports:
+      - '${WEB_HOST_BIND:-127.0.0.1}:${WEB_HOST_PORT:-8080}:8080'
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 64m
+    cpus: 0.5
+
+secrets:
+  monitor_key:
+    file: ./secrets/monitor_key
