@@ -34,7 +34,8 @@ printf '%s' "$token" > "$work/secrets/monitor_key" && chmod 644 "$work/secrets/m
 echo "the file on its own"
 grep -Eq '^\s*(build|dockerfile):' "$work/compose.yaml"; [ $? -ne 0 ]; check "has no build section, so it needs no Dockerfile" $?
 # "read -s" and "read -p" exist only in bash: zsh (the macOS default) and dash (sh on Debian and Ubuntu) fail.
-grep -Eq 'read -[a-zA-Z]*[ps]' "$here/compose.standalone.yaml" "$here/README.md" "$here/docs/DEPLOYMENT.md"; [ $? -ne 0 ]
+grep -Eq 'read -[a-zA-Z]*[ps]' "$here/compose.standalone.yaml" "$here/README.md" "$here/docs/DEPLOYMENT.md" \
+  "$here/deploy/ai-watch-web-deploy/README.md"; [ $? -ne 0 ]
 check "documents a token command that is not bash-only (no read -s or -p)" $?
 out="$(compose config -q 2>&1)"; [ $? -ne 0 ] && printf '%s' "$out" | grep -q 'UPSTREAM_URL'
 check "refuses to start without UPSTREAM_URL and says why" $?

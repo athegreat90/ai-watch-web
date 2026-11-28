@@ -78,7 +78,8 @@ By default the page listens on `127.0.0.1` only and has **no login**. To open it
 cp env.example .env                  # choose the image, bind address and server
 mkdir -p secrets && chmod 700 secrets
 # Paste the token when asked (it is not echoed, and it stays out of your shell history).
-IFS= read -rs -p 'Server token: ' t && printf '%s' "$t" > secrets/monitor_key && unset t && chmod 644 secrets/monitor_key
+printf 'Server token: '; stty -echo; IFS= read -r t; stty echo; printf '\n'
+printf '%s' "$t" > secrets/monitor_key; unset t; chmod 644 secrets/monitor_key
 docker compose pull
 docker compose up -d --wait
 ```
